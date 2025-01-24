@@ -1,0 +1,18 @@
+load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary")
+
+csharp_binary(
+    name = "DepotDownloader",
+    srcs = glob(["*.cs"]),
+    target_frameworks = [
+        "net9.0",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@paket.main//protobuf-net",
+        "@paket.main//protobuf-net.core",
+        "@paket.main//qrcoder",
+        "@paket.main//steamkit2",
+    ],
+)

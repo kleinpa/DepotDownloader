@@ -1,0 +1,7 @@
+source https://api.nuget.org/v3/index.json
+
+framework: net9.0
+
+nuget protobuf-net 3.2.45
+nuget QRCoder 1.6.0
+nuget SteamKit2 3.0.1
