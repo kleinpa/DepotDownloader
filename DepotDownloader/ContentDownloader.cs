@@ -658,8 +658,6 @@ namespace DepotDownloader
 
         private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots)
         {
-            Ansi.Progress(Ansi.ProgressState.Indeterminate);
-
             var cts = new CancellationTokenSource();
             cdnPool.ExhaustedToken = cts;
 
@@ -700,8 +698,6 @@ namespace DepotDownloader
             {
                 await DownloadSteam3AsyncDepotFiles(cts, downloadCounter, depotFileData, allFileNamesAllDepots);
             }
-
-            Ansi.Progress(Ansi.ProgressState.Hidden);
 
             Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
                 downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
@@ -1316,8 +1312,6 @@ namespace DepotDownloader
             {
                 downloadCounter.totalBytesCompressed += chunk.CompressedLength;
                 downloadCounter.totalBytesUncompressed += chunk.UncompressedLength;
-
-                Ansi.Progress(downloadCounter.totalBytesUncompressed, downloadCounter.completeDownloadSize);
             }
 
             if (remainingChunks == 0)

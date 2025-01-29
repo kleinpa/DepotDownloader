@@ -378,8 +378,6 @@ namespace DepotDownloader
             abortedToken.Cancel();
             steamClient.Disconnect();
 
-            Ansi.Progress(Ansi.ProgressState.Hidden);
-
             // flush callbacks until our disconnected event
             while (!bDidDisconnect)
             {
