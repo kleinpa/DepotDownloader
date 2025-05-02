@@ -13,7 +13,7 @@ using SteamKit2;
 
 namespace DepotDownloader
 {
-    static class Util
+    public static class Util
     {
         public static string GetSteamOS()
         {

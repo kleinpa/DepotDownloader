@@ -15,11 +15,11 @@ using SteamKit2.CDN;
 
 namespace DepotDownloader
 {
-    class ContentDownloaderException(string value) : Exception(value)
+    public class ContentDownloaderException(string value) : Exception(value)
     {
     }
 
-    static class ContentDownloader
+    public static class ContentDownloader
     {
         public const uint INVALID_APP_ID = uint.MaxValue;
         public const uint INVALID_DEPOT_ID = uint.MaxValue;
@@ -35,7 +35,7 @@ namespace DepotDownloader
         private const string CONFIG_DIR = ".DepotDownloader";
         private static readonly string STAGING_DIR = Path.Combine(CONFIG_DIR, "staging");
 
-        private sealed class DepotDownloadInfo(
+        public sealed class DepotDownloadInfo(
             uint depotid, uint appId, ulong manifestId, string branch,
             string installDir, byte[] depotKey)
         {
