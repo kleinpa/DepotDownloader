@@ -560,6 +560,114 @@ namespace DepotDownloader
             }
         }
 
+        public static async Task<List<DepotDownloadInfo>> LookupManifestsForAppAsync(uint appId, string branch, string os, string arch, string language, bool lv, bool isUgc)
+        {
+            List<uint> depotIds = new();
+
+            cdnPool = new CDNClientPool(steam3, appId);
+
+            // Load our configuration data containing the depots currently installed
+            var configPath = Config.InstallDirectory;
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                configPath = DEFAULT_DOWNLOAD_DIR;
+            }
+
+            Directory.CreateDirectory(Path.Combine(configPath, CONFIG_DIR));
+            DepotConfigStore.LoadFromFile(Path.Combine(configPath, CONFIG_DIR, "depot.config"));
+
+            await steam3?.RequestAppInfo(appId);
+
+            if (!await AccountHasAccess(appId, appId))
+            {
+                if (await steam3.RequestFreeAppLicense(appId))
+                {
+                    Console.WriteLine("Obtained FreeOnDemand license for app {0}", appId);
+
+                    // Fetch app info again in case we didn't get it fully without a license.
+                    await steam3.RequestAppInfo(appId, true);
+                }
+                else
+                {
+                    var contentName = GetAppName(appId);
+                    throw new ContentDownloaderException(string.Format("App {0} ({1}) is not available from this account.", appId, contentName));
+                }
+            }
+
+            var depots = GetSteam3AppSection(appId, EAppInfoSection.Depots);
+
+            Console.WriteLine("Using app branch: '{0}'.", branch);
+
+            if (depots != null)
+            {
+                foreach (var depotSection in depots.Children)
+                {
+                    var id = INVALID_DEPOT_ID;
+                    if (depotSection.Children.Count == 0)
+                        continue;
+
+                    if (!uint.TryParse(depotSection.Name, out id))
+                        continue;
+
+                    var depotConfig = depotSection["config"];
+                    if (depotConfig != KeyValue.Invalid)
+                    {
+                        if (!Config.DownloadAllPlatforms &&
+                            depotConfig["oslist"] != KeyValue.Invalid &&
+                            !string.IsNullOrWhiteSpace(depotConfig["oslist"].Value))
+                        {
+                            var oslist = depotConfig["oslist"].Value.Split(',');
+                            if (Array.IndexOf(oslist, os ?? Util.GetSteamOS()) == -1)
+                                continue;
+                        }
+
+                        if (!Config.DownloadAllArchs &&
+                            depotConfig["osarch"] != KeyValue.Invalid &&
+                            !string.IsNullOrWhiteSpace(depotConfig["osarch"].Value))
+                        {
+                            var depotArch = depotConfig["osarch"].Value;
+                            if (depotArch != (arch ?? Util.GetSteamArch()))
+                                continue;
+                        }
+
+                        if (!Config.DownloadAllLanguages &&
+                            depotConfig["language"] != KeyValue.Invalid &&
+                            !string.IsNullOrWhiteSpace(depotConfig["language"].Value))
+                        {
+                            var depotLang = depotConfig["language"].Value;
+                            if (depotLang != (language ?? "english"))
+                                continue;
+                        }
+
+                        if (!lv &&
+                            depotConfig["lowviolence"] != KeyValue.Invalid &&
+                            depotConfig["lowviolence"].AsBoolean())
+                            continue;
+
+                    }
+
+                    depotIds.Add(id);
+                }
+            }
+
+            if (depotIds.Count == 0)
+            {
+                throw new ContentDownloaderException(string.Format("Couldn't find any depots to download for app {0}", appId));
+            }
+
+            var infos = new List<DepotDownloadInfo>();
+            foreach (var depotId in depotIds)
+            {
+                var info = await GetDepotInfo(depotId, appId, INVALID_MANIFEST_ID, branch);
+                if (info != null)
+                {
+                    infos.Add(info);
+                }
+            }
+
+            return infos;
+        }
+
         static async Task<DepotDownloadInfo> GetDepotInfo(uint depotId, uint appId, ulong manifestId, string branch)
         {
             if (steam3 != null && appId != INVALID_APP_ID)
